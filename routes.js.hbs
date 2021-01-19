@@ -1,0 +1,19 @@
+{{#each routes}}
+{{#unless this.async}}
+import {{this.name}} from '{{this.importPath}}';
+{{/unless}}
+{{/each}}
+
+export default [
+{{#each routes}}
+  {
+    name: '{{this.name}}',
+    path: '{{this.path}}',
+    {{#if this.async}}
+    asyncComponent: () => import('{{this.importPath}}'),
+    {{else}}
+    component: {{this.name}},
+    {{/if}}
+  },
+{{/each}}
+];
