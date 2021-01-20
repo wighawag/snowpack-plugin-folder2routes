@@ -1,6 +1,6 @@
 {{#each routes}}
 {{#unless this.async}}
-import {{this.name}} from '{{this.importPath}}';
+import {{this.componentName}} from '{{this.importPath}}';
 {{/unless}}
 {{/each}}
 
@@ -12,7 +12,7 @@ export default [
     {{#if this.async}}
     asyncComponent: () => import('{{this.importPath}}'),
     {{else}}
-    component: {{this.name}},
+    component: {{this.componentName}},
     {{/if}}
   },
 {{/each}}

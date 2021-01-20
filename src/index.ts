@@ -3,75 +3,68 @@ import Handlebars from "handlebars";
 import fs from 'fs-extra';
 import path from 'path';
 import { pascalCase } from "pascal-case";
+import slash from 'slash';
+import { traverse } from './lib';
 
 export type Folder2RoutesPluginOptions = {
   folderPath?: string
+  onRoute: (route: string) => void;
+  routes?: string[];
 };
+
+export const folder: {routes: string[]} = {routes: []};
 
 export default function (snowpackConfig: SnowpackConfig, options: Folder2RoutesPluginOptions): SnowpackPlugin {
   const routesTemplate = fs.readFileSync(path.join(__dirname, '../routes.js.hbs')).toString();
-  // const filepath = (options.folderPath || './src/routes') + '/index.ts';
-  // console.log({filepath})
   return {
     name: 'snowpack-plugin-folder2routes',
-    // resolve: {
-    //   input: ['.routes.ts'],
-    //   output: ['.routes.js']
-    // },
-
-    // async load(options: PluginLoadOptions): Promise<PluginLoadResult | string | null | undefined | void> {
-    //   console.log(options.filePath, options.fileExt);
-    //   return "export default ['sd'];"
-    // },
     async transform({id, fileExt, contents}: PluginTransformOptions): Promise<PluginTransformResult | string | null | undefined | void> {
       // console.log({id, fileExt});
       if (id.endsWith('.routes.js')) { // TODO fileExt === '.routes.ts' ?
         // console.log({contents});
-        const folder = path.dirname(id);
-        const filepaths = fs.readdirSync(folder);
+        const folderPath = path.dirname(id);
+        const filepaths = traverse(folderPath);
         // TODO recursive
-        const routes = [];
+        const routeInfos = [];
         for (const file of filepaths) {
-          if (file.startsWith('_')) {
+          if (file.directory) {
             continue;
           }
-          const filepath = file;
-          const ext = path.extname(file);
-          const filenameWithoutExtenstion = filepath.substr(0, filepath.length - ext.length);
-          const name = pascalCase(filenameWithoutExtenstion);
-          const isIndexRoute = name === 'Index'; // TODO || name === 'Home';
+          if (file.name.startsWith('_')) {
+            continue;
+          }
+          const filepath = slash(file.relativePath);
+          const ext = path.extname(file.name);
+          const filepathWithoutExtenstion = filepath.substr(0, filepath.length - ext.length);
+          const protoName = filepathWithoutExtenstion.toLowerCase();
+          const isIndexRoute = protoName === 'index' || protoName.endsWith('/index');
 
-          routes.push({
+          const routePath = isIndexRoute ? (protoName === 'index' ? '' : protoName.substr(0, protoName.length - 6)) : protoName;
+          const name = routePath === '' ? 'index' : routePath;
+          const componentName = pascalCase(protoName);
+
+          // console.log({componentName, protoName, routePath, filepath, filepathWithoutExtenstion, isIndexRoute, ext});
+
+          routeInfos.push({
+            componentName,
             importPath: `./${filepath}`,
             name,
-            path: isIndexRoute ? '' : name.toLowerCase(),
-            async: !isIndexRoute // TODO support generating multiple entry points
+            path: routePath,
+            async:  protoName !== 'index' // TODO support generating multiple entry points
           })
+          if(options.onRoute !== undefined) {
+            options.onRoute(routePath);
+          }
+          if (options.routes) {
+            options.routes.push(routePath);
+          }
+          folder.routes.push(routePath);
         }
         const template = Handlebars.compile(routesTemplate);
-        const result = template({routes});
+        const result = template({routes: routeInfos});
         // console.log({result});
         return result;
       }
-    },
-    // async run(options: PluginRunOptions): Promise<void> {
-
-    // },
-    // async optimize({buildDirectory}: PluginOptimizeOptions): Promise<void> {
-
-    // },
-    // async cleanup(): Promise<void> {
-
-    // },
-
-    // knownEntrypoints: undefined,  // []
-    // config(snowpackConfig: SnowpackConfig): void {
-
-    // },
-    onChange({ filePath }: {
-        filePath: string;
-    }): void {
-      // TODO ?
     },
   };
 };
