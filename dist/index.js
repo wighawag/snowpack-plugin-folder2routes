@@ -35,9 +35,12 @@ function default_1(snowpackConfig, options) {
                     const filepathWithoutExtenstion = filepath.substr(0, filepath.length - ext.length);
                     const protoName = filepathWithoutExtenstion.toLowerCase();
                     const isIndexRoute = protoName === 'index' || protoName.endsWith('/index');
-                    const routePath = isIndexRoute ? (protoName === 'index' ? '' : protoName.substr(0, protoName.length - 6)) : protoName;
+                    let routePath = isIndexRoute ? (protoName === 'index' ? '' : protoName.substr(0, protoName.length - 6)) : protoName;
                     const name = routePath === '' ? 'index' : routePath;
                     const componentName = pascal_case_1.pascalCase(protoName);
+                    if (protoName === '_404') {
+                        routePath = '.*';
+                    }
                     // console.log({componentName, protoName, routePath, filepath, filepathWithoutExtenstion, isIndexRoute, ext});
                     routeInfos.push({
                         componentName,
@@ -54,6 +57,15 @@ function default_1(snowpackConfig, options) {
                     }
                     exports.folder.routes.push(routePath);
                 }
+                routeInfos.sort((route1, route2) => {
+                    if (route1.path === '.*') {
+                        return 1;
+                    }
+                    if (route2.path === '.*') {
+                        return -1;
+                    }
+                    return 0;
+                });
                 const template = handlebars_1.default.compile(routesTemplate);
                 const result = template({ routes: routeInfos });
                 // console.log({result});

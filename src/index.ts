@@ -39,9 +39,13 @@ export default function (snowpackConfig: SnowpackConfig, options: Folder2RoutesP
           const protoName = filepathWithoutExtenstion.toLowerCase();
           const isIndexRoute = protoName === 'index' || protoName.endsWith('/index');
 
-          const routePath = isIndexRoute ? (protoName === 'index' ? '' : protoName.substr(0, protoName.length - 6)) : protoName;
+          let routePath = isIndexRoute ? (protoName === 'index' ? '' : protoName.substr(0, protoName.length - 6)) : protoName;
           const name = routePath === '' ? 'index' : routePath;
           const componentName = pascalCase(protoName);
+
+          if (protoName === '_404') {
+            routePath = '.*';
+          }
 
           // console.log({componentName, protoName, routePath, filepath, filepathWithoutExtenstion, isIndexRoute, ext});
 
@@ -60,6 +64,15 @@ export default function (snowpackConfig: SnowpackConfig, options: Folder2RoutesP
           }
           folder.routes.push(routePath);
         }
+        routeInfos.sort((route1, route2) => {
+          if (route1.path === '.*') {
+            return 1;
+          }
+          if (route2.path === '.*') {
+            return -1
+          }
+          return 0;
+        });
         const template = Handlebars.compile(routesTemplate);
         const result = template({routes: routeInfos});
         // console.log({result});

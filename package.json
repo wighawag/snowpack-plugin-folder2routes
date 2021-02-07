@@ -1,6 +1,6 @@
 {
   "name": "snowpack-plugin-folder2routes",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Snowpack plugin to generate routes from folder with a file for each route",
   "keywords": [
     "router",
